@@ -1,6 +1,11 @@
-# Feature for AdminJS
+# Bundler for AdminJS
 
-This is a feature template.
+This is a bundler utility tool for AdminJS.
+Normally, AdminJS builts custom components on server's startup which can slow it down or cause high memory usage.
+
+This tool allows you to pre-bundle AdminJS browser files before deploying or during your CI/CD process.
+
+**IMPORTANT:** To prevent AdminJS from attempting to generate a new bundle on server startup, you must set `ADMIN_JS_SKIP_BUNDLE="true"` environment variable! `"true"` needs to be a `string`, it cannot be a `boolean`.
 
 ## AdminJS
 
@@ -12,6 +17,7 @@ Or visit [AdminJS](https://github.com/SoftwareBrothers/adminjs) github page.
 
 ## Usage
 
+Please see "example" directory in this package's repository.
 
 ## License
 

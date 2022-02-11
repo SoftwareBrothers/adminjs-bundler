@@ -3,3 +3,5 @@ node_modules
 commitlint.config.js
 .idea
 test
+example
+.adminjs

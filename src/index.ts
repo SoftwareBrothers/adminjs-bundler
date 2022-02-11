@@ -1,9 +1,9 @@
 /**
- * @module @adminjs/example-feature
- * @subcategory Features
+ * @module @adminjs/bundler
+ * @subcategory Utilities
  * @section modules
  */
+import * as BundlerUtility from './bundle';
 
-import feature from './feature';
-
-export default feature;
+export { default as bundle, BundleFile, BundleConfig } from './bundle';
+export { BundlerUtility };
