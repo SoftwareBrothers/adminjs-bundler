@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import AdminJS from 'adminjs';
+import AdminJS, { AdminJSOptions } from 'adminjs';
 
 process.env.ADMIN_JS_SKIP_BUNDLE = 'false';
 process.env.NODE_ENV = 'production';
@@ -57,6 +57,11 @@ export type BundleConfig = {
    * The path is relative to where you run the script.
    */
   designSystemDir?: string;
+  /**
+   * You can pass your AdminJS Options config in case you're using external
+   * packages with custom components. It's enough to include only `resources` section.
+   */
+  adminJsOptions?: AdminJSOptions;
 };
 
 /**
@@ -122,6 +127,7 @@ const bundle = async ({
   adminJsLocalDir = ADMINJS_LOCAL_DIR_PATH,
   adminJsAssetsDir = ADMINJS_ASSETS_DIR_PATH,
   designSystemDir = DESIGN_SYSTEM_DIR_PATH,
+  adminJsOptions = {}
 }: BundleConfig): Promise<BundleFile[]> => {
   await import(join(process.cwd(), customComponentsInitializationFilePath));
 
@@ -156,7 +162,7 @@ const bundle = async ({
     destinationPath,
   )));
 
-  await new AdminJS({}).initialize();
+  await new AdminJS(adminJsOptions).initialize();
   await fs.rename(
     customComponentsBundle.sourcePath,
     customComponentsBundle.destinationPath,
