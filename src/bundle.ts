@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join , parse} from 'path';
 import AdminJS, { AdminJSOptions } from 'adminjs';
 
 process.env.ADMIN_JS_SKIP_BUNDLE = 'false';
@@ -17,8 +17,8 @@ const DESIGN_SYSTEM_DIR_PATH = 'node_modules/@adminjs/design-system';
  */
 export type BundleConfig = {
   /**
-   * File path where the bundled files should be moved into. 
-   * 
+   * File path where the bundled files should be moved into.
+   *
    * The path is relative to where you run the script.
    */
   destinationDir: string;
@@ -26,34 +26,34 @@ export type BundleConfig = {
    * File path where custom components are bundled. If you have
    * custom components in your project, they must be bundled in one single file.
    * Please look at the example in the repository.
-   * 
+   *
    * The path is relative to where you run the script.
    */
   customComponentsInitializationFilePath: string;
   /**
    * File path where AdminJS entry files are generated.
-   * 
+   *
    * This defaults to '.adminjs'.
    * Set this only if you know what you're doing.
-   * 
+   *
    * The path is relative to where you run the script.
    */
   adminJsLocalDir?: string;
   /**
    * File path where AdminJS standard bundle files are located.
-   * 
+   *
    * This defaults to 'node_modules/adminjs/lib/frontend/assets/scripts'.
    * Set this only if you know what you're doing.
-   * 
+   *
    * The path is relative to where you run the script.
    */
   adminJsAssetsDir?: string;
   /**
    * File path where AdminJS design system bundle files are located.
-   * 
+   *
    * This defaults to 'node_modules/@adminjs/design-system'.
    * Set this only if you know what you're doing.
-   * 
+   *
    * The path is relative to where you run the script.
    */
   designSystemDir?: string;
@@ -62,7 +62,30 @@ export type BundleConfig = {
    * packages with custom components. It's enough to include only `resources` section.
    */
   adminJsOptions?: AdminJSOptions;
+  /**
+   * You can define "versioning" if you want your assets to be versioned, e. g.
+   * 'app.bundle.123456.js'. Please note that this requires AdminJS version >= 5.8.0
+   *
+   * This will generate a JSON manifest file under specified path (relative to where you run the command).
+   *
+   * The generated file should be linked to `assets.coreScripts` in your
+   * AdminJS options object.
+   */
+  versioning?: AssetsVersioning;
 };
+
+/**
+ * Versioning configuration
+ *
+ * @memberof module:@adminjs/bundler
+ * @alias AssetsVersioning
+ */
+export type AssetsVersioning = {
+  /**
+   * Path where you would like your AdminJS assets-manifest file to be saved.
+   */
+  manifestPath: string;
+}
 
 /**
  * AdminJS file config
@@ -85,6 +108,27 @@ export type BundleFile = {
   destinationPath: string;
 };
 
+const getDestinationPath = (
+  asset: string,
+  timestamp?: number | null,
+): string => {
+  if (!timestamp) return asset;
+
+  const { ext, name } = parse(asset);
+
+  return `${name}.${timestamp}${ext}`;
+};
+
+const createAssetsManifest = (files: BundleFile[]): string => {
+  const coreScripts = files.reduce((memo, { destinationPath, name }) => {
+    memo[name] = parse(destinationPath).base;
+
+    return memo;
+  }, {});
+
+  return JSON.stringify(coreScripts);
+};
+
 /**
  * Bundles AdminJS javascript browser files. This is an alternative to bundling those files on server startup.
  * The bundled files are stored in "destinationDir". Afterwards, you can for example:
@@ -98,11 +142,11 @@ export type BundleFile = {
  *   ...
  *   const adminJs = new AdminJS({ assetsCDN: <your server's url> })
  * ```
- * 
+ *
  * IMPORTANT: To prevent AdminJS from attempting to generate a new bundle on server startup,
  * you must set `ADMIN_JS_SKIP_BUNDLE="true"` environment variable!
- * 
- * 
+ *
+ *
  * @param {BundleConfig} options
  * @memberof module:@adminjs/bundler
  * @method
@@ -119,7 +163,7 @@ export type BundleFile = {
  *   console.log(files);
  *   // do something with built files here
  * })();
- * 
+ *
  */
 const bundle = async ({
   destinationDir,
@@ -127,31 +171,33 @@ const bundle = async ({
   adminJsLocalDir = ADMINJS_LOCAL_DIR_PATH,
   adminJsAssetsDir = ADMINJS_ASSETS_DIR_PATH,
   designSystemDir = DESIGN_SYSTEM_DIR_PATH,
-  adminJsOptions = {}
+  adminJsOptions = {},
+  versioning,
 }: BundleConfig): Promise<BundleFile[]> => {
   await import(join(process.cwd(), customComponentsInitializationFilePath));
 
+  const timestamp = versioning?.manifestPath ? Date.now() : null;
   await fs.mkdir(join(process.cwd(), destinationDir), { recursive: true });
   const files = [
     {
       name: 'components.bundle.js',
       sourcePath: join(process.cwd(), `${adminJsLocalDir}/bundle.js`),
-      destinationPath: join(process.cwd(), destinationDir, 'components.bundle.js')
+      destinationPath: join(process.cwd(), destinationDir, getDestinationPath('components.bundle.js', timestamp))
     },
     {
       name: 'app.bundle.js',
       sourcePath: join(process.cwd(), `${adminJsAssetsDir}/app-bundle.production.js`),
-      destinationPath: join(process.cwd(), destinationDir, 'app.bundle.js'),
+      destinationPath: join(process.cwd(), destinationDir, getDestinationPath('app.bundle.js', timestamp)),
     },
     {
       name: 'global.bundle.js',
       sourcePath: join(process.cwd(), `${adminJsAssetsDir}/global-bundle.production.js`),
-      destinationPath: join(process.cwd(), destinationDir, 'global.bundle.js')
+      destinationPath: join(process.cwd(), destinationDir, getDestinationPath('global.bundle.js', timestamp))
     },
     {
       name: 'design-system.bundle.js',
       sourcePath: join(process.cwd(), `${designSystemDir}/bundle.production.js`),
-      destinationPath: join(process.cwd(), destinationDir, 'design-system.bundle.js')
+      destinationPath: join(process.cwd(), destinationDir, getDestinationPath('design-system.bundle.js', timestamp))
     },
   ];
 
@@ -167,6 +213,21 @@ const bundle = async ({
     customComponentsBundle.sourcePath,
     customComponentsBundle.destinationPath,
   );
+
+  if (versioning?.manifestPath) {
+    const manifestContents = createAssetsManifest(files);
+    const { ext } = parse(versioning?.manifestPath);
+
+    if (ext !== '.json') {
+      await Promise.all(files.map(({ destinationPath }) => fs.unlink(destinationPath)));
+      throw new Error('Invalid "versioning.manifestPath". File name must have .json extension.');
+    }
+
+    await fs.writeFile(
+      join(process.cwd(), versioning.manifestPath),
+      manifestContents,
+    );
+  }
 
   console.log(`✨ Successfully built AdminJS bundle files! ✨`);
 
