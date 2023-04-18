@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { bundle } from '../../src';
-import { uploadFile } from './deploy-s3';
+import { bundle } from '../../src/index.js';
+
+import componentLoader from '../src/components/index.js';
+import { uploadFile } from './deploy-s3.js';
 
 (async () => {
   const files = await bundle({
-    customComponentsInitializationFilePath: 'src/components/index.ts',
+    componentLoader,
     destinationDir: 'src/public',
   });
 

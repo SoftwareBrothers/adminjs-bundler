@@ -1,7 +1,8 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import AWS from 'aws-sdk';
-import { BundleFile } from "../../src";
+
+import { BundleFile } from "../../src/index.js";
 
 type UploadOptions = {
   keyPrefix: string;

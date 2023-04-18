@@ -125,3 +125,4 @@ dist
 /types
 .adminjs
 example/.adminjs
+.husky

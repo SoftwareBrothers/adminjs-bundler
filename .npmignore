@@ -5,3 +5,4 @@ commitlint.config.js
 test
 example
 .adminjs
+.husky

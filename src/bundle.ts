@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 import { join , parse} from 'path';
-import AdminJS, { AdminJSOptions } from 'adminjs';
+import AdminJS, { type ComponentLoader } from 'adminjs';
 
 process.env.ADMIN_JS_SKIP_BUNDLE = 'false';
 process.env.NODE_ENV = 'production';
@@ -23,13 +23,9 @@ export type BundleConfig = {
    */
   destinationDir: string;
   /**
-   * File path where custom components are bundled. If you have
-   * custom components in your project, they must be bundled in one single file.
-   * Please look at the example in the repository.
-   *
-   * The path is relative to where you run the script.
+   * Your ComponentLoader instance
    */
-  customComponentsInitializationFilePath: string;
+  componentLoader: ComponentLoader;
   /**
    * File path where AdminJS entry files are generated.
    *
@@ -57,11 +53,6 @@ export type BundleConfig = {
    * The path is relative to where you run the script.
    */
   designSystemDir?: string;
-  /**
-   * You can pass your AdminJS Options config in case you're using external
-   * packages with custom components. It's enough to include only `resources` section.
-   */
-  adminJsOptions?: AdminJSOptions;
   /**
    * You can define "versioning" if you want your assets to be versioned, e. g.
    * 'app.bundle.123456.js'. Please note that this requires AdminJS version >= 5.8.0
@@ -167,14 +158,14 @@ const createAssetsManifest = (files: BundleFile[]): string => {
  */
 const bundle = async ({
   destinationDir,
-  customComponentsInitializationFilePath,
+  componentLoader,
   adminJsLocalDir = ADMINJS_LOCAL_DIR_PATH,
   adminJsAssetsDir = ADMINJS_ASSETS_DIR_PATH,
   designSystemDir = DESIGN_SYSTEM_DIR_PATH,
-  adminJsOptions = {},
   versioning,
 }: BundleConfig): Promise<BundleFile[]> => {
-  await import(join(process.cwd(), customComponentsInitializationFilePath));
+  const admin = new AdminJS({ componentLoader });
+  await admin.initialize();
 
   const timestamp = versioning?.manifestPath ? Date.now() : null;
   await fs.mkdir(join(process.cwd(), destinationDir), { recursive: true });
@@ -208,7 +199,6 @@ const bundle = async ({
     destinationPath,
   )));
 
-  await new AdminJS(adminJsOptions).initialize();
   await fs.rename(
     customComponentsBundle.sourcePath,
     customComponentsBundle.destinationPath,
