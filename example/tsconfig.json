@@ -1,19 +1,19 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "target": "ES2018",
-    "module": "CommonJS",
+    "target": "esnext",
+    "module": "nodenext",
     "esModuleInterop": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": false,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
     "noImplicitThis": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
     "jsx": "react"
   },
-  "include": ["./src/**/*", "./spec/**/*"]
+  "include": ["./src/**/*", "./bin/**/*"]
 }
